@@ -1,0 +1,169 @@
+###############################################################################
+###############################################################################
+########## LIMITATIONS ########################################################
+###############################################################################
+###############################################################################
+---------------------------------------------------------------------
+File:    information.txt
+Purpose: Plaintext "database" file for all users
+Limitations:
+ - Any blank lines that appear in the file cause scripts that read
+   the file to display the output incorrectly.
+ - Not every script that writes to the file checks that no extra
+   colons have been unnecessarily added; this also causes the output
+   to display incorrectly by scripts that parse the file.
+ - As a plaintext file with required read and write permissions,
+   anyone may edit the file to their liking. This can result in
+   (for example) the username being edited so that it no longer
+   exists in the /etc/passwd file, or colons being added or removed.
+---------------------------------------------------------------------
+File:    0_master_file.pl
+Purpose: Provide a menu system to the user, to access the other
+         Perl scripts, as well as the log file if desired
+Limitations:
+ - Code is inelegant and long-winded in regards to its functionality.
+ - No "less" format option for printing the log file (I did manage to
+   implement this in script 5 for displaying all users, however).
+---------------------------------------------------------------------
+File:    1_add_entry.pl
+Purpose: Allow the user to a user to the information.txt file
+Limitations:
+ - Again, inelegant and long-winded code.
+   - Each element to be added and inserted into the information file
+     requires two subroutines each - one to accept input, and another
+     to "check" it using regular expressions - efficiency is reduced.
+ - Only one of the element checking subroutines ensures that there
+   are no colons inputted in the variable.
+ - There are no checks to ensure that the telephone extension is
+   unique. I assumed that username was to be the only unique element.
+ - There are no checks on the user's manager element. The element
+   could either have been accepted as "null", or would have been
+   checked for existence within the /etc/passwd file, but I did not
+   manage to achieve this within the time.
+ - The date regular expressions do not function correctly.
+   - Accepts strange values such as "55/55/555555555".
+     - I could have attempted to work around this by implementing
+       minimum and maximum day, month and year values. However, I
+       could not implement this fully due to time constraints.
+ - Neither this script nor any other script manages to sort the
+   information file by start date.
+   - I included a hidden script (.sort_by_start_date.pl) which simply
+     finds the user with the earliest start date, but this is as far
+     as I could get within the time.
+---------------------------------------------------------------------
+File:    2_change_entry.pl
+Purpose: Allow the user to modify a user in the information.txt file
+Limitations:
+ - Crucially, although the script gives the user the option for
+   amending ALL fields for a user, and amending ONE OR MORE fields
+   for a user, only the former option works. Due to time constraints,
+   I was unable to implement partial user modification.
+ - Full modification has no regular expression checks associated with
+   any element to be inserted. This is to avoid code repeated code
+   from the add script.
+   - I could have outsourced the regular expression checks to an
+     external script or module, but was unable to do so due to time
+     constraints.
+---------------------------------------------------------------------
+File:    3_delete_entry.pl
+Purpose: Allow the user to delete an entry entry from the
+         information.txt file
+Limitations:
+ - The way in which this script deletes a user may be viewed as
+   very inefficient.
+   - In short, it follows this pattern:
+     - Scripts finds the line that begins with the user to delete.
+     - Deletion confirmation is obtained from the user.
+     - All lines EXCEPT for the line to be deleted is copied to a
+       temporary file (.tempfile.txt).
+     - The original information file is immediately overwritten with
+       the contents of the temporary file.
+     - It appears as though the user to be deleted never existed.
+   - I attempted to simply remove the line using a regular
+     expression, but was unable to achieve this.
+---------------------------------------------------------------------
+File:    4_get_info.pl
+Purpose: Allow the user to return all or partial info on a specific
+         user that is found in the information.txt file
+Limitations:
+ - The script only iterates through a single subroutine called
+   "what_info" to decide what info on the specific user is to be
+   displayed. This means two things:
+   - If the user does not choose "y" or "n" for any of the choices,
+     the program is forced to start from the beginning of the
+     subroutine again. This is very inefficient.
+     - I could have split each element choice into its own
+       subroutine to work around this.
+   - There is currently no option for viewing EVERY element for a
+     specific user. This would have been a very useful option to
+     include, but I was unable to achieve this within the time.
+---------------------------------------------------------------------
+File:    5_display_all.pl
+Purpose: Simply print out every user found in the information.txt
+         file, along with various other derived information (such
+         as full name found through searching the /etc/passwd file)
+Limitations:
+ - If any blank lines exist in the information file, this script will
+   detect them and then force itself to exit.
+   - I attempted to remove them within the script using regular
+     expressions, but was unable to achieve this.
+ - If more/less than expected colons are encountered, the output
+   will be displayed incorrectly (with numerous errors).
+ - User group name was unable to be added for each user
+   - It may be derived from the /etc/group file, but since each
+     user instance occurs twice in this file, choosing the correct
+     one would require very complex regular expressions.
+   - I instead used the group number, derived from the /etc/passwd
+     file.
+ - If the username is such that it cannot be found in the /etc/passwd
+   file, much of the derived information will fail, resulting in
+   errors (derived information includes full name, home directory,
+   shell used, and group number).
+ - I could not calculate the number of days a user has worked at the
+   company due to time constraints.
+ - The option for viewing all users in "less" format consistently
+   freezes when scrolling through it.
+   - The only way out of this is to ^C, and continue as normal.
+     - I tried to work around this by providing clear keybinding
+       instructions to the user should they choose to view the file
+       in less format.
+---------------------------------------------------------------------
+File:    .get_date_time.pl
+Purpose: Hidden script that generates the current date and time for
+         inserting into the logfile
+Limitations:
+ - I used Perl's inbuilt localtime function to retrieve the current
+   date and time for inserting into the logile.
+   - However, any localtime value which is a single digit remains as
+     a single digit, meaning (for example) times are inserted as
+     9:0:4 instead of the more correct 09:00:04.
+     - I attempted to fix this in a subroutine named
+       alter_time_format, but was unable to finish this (the partial
+       subroutine still remains as comments in the code).
+---------------------------------------------------------------------
+File:    logfile.txt
+Purpose: Acts as an audit log for many actions performed on the
+         information.txt file
+Limitations:
+ - Please refer to the limitations listed for the .get_date_time.pl
+   script.
+ - Secondly, as the file logs each individual action performed on
+   the information file, large sections of code that writes to the
+   log file must be repeated (since each action is different to one
+   another).
+---------------------------------------------------------------------
+File:    .tempfile.txt
+Purpose: Temporary plaintext file used for actions such as deleting
+         or modifying a user.
+Limitations:
+ - The file is left as it is after an action utilises it (for
+   example, after deleting a user, it will hold records for all
+   users except the user that was deleted).
+   - I could have included code to "wipe"/"blank" the file after
+     it has been used, but as the file is overwitten each time a
+     new action performs functionality upon it, it is not really
+     necessary.
+   - Alternatively, it may have been desirable to create and delete
+     the file dynamically as and when it is required by a script.
+     However, I was unable to achieve this.
+---------------------------------------------------------------------
